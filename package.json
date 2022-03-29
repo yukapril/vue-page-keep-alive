@@ -1,6 +1,6 @@
 {
   "name": "vue-page-keep-alive",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Vue 页面级 keep-alive 控制。路由后退时走缓存，前进时不走缓存。",
   "main": "lib/index.js",
   "scripts": {
@@ -17,9 +17,11 @@
   },
   "homepage": "https://github.com/yukapril/vue-page-keep-alive#readme",
   "devDependencies": {
-    "mitt": "^3.0.0",
     "typescript": "^4.6.3",
     "vue": "^2.6.14",
     "vue-router": "^3.5.3"
+  },
+  "dependencies": {
+    "mitt": "^3.0.0"
   }
 }
