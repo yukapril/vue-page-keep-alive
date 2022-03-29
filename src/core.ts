@@ -1,5 +1,5 @@
 import { emitter, PKA_CACHE_KEY, PKA_DESTROYED_COMP_KEY } from './emitter'
-import { KeepAliveCache, KeepAliveObject } from './types'
+import { KeepAliveCache, KeepAliveObject, KeepAliveOptions } from './types'
 import Vue, { VueConstructor } from 'vue'
 import 'vue-router'
 
@@ -21,15 +21,13 @@ const registerScrollBehavior = (vm: Vue) => {
   const hasBehavior = vm.$router.options.scrollBehavior
   if (hasBehavior) return
   vm.$router.options.scrollBehavior = (to, from, savedPosition) => {
-    if (savedPosition) {
-      return savedPosition
-    } else {
-      return { x: 0, y: 0 }
-    }
+    return savedPosition || { x: 0, y: 0 }
   }
 }
 
 const KeepAlive: KeepAliveObject = {
+  debug: false,
+
   cachedPages: [],
 
   isRegisterScrollBehavior: false,
@@ -38,6 +36,7 @@ const KeepAlive: KeepAliveObject = {
     if (!page) return
     if (this.cachedPages.indexOf(page) >= 0) return
     this.cachedPages.push(page)
+    if (this.debug) console.log(`[KeepAlive] 增加缓存页 ${page}`)
     // 复制一份再传送
     emitter.emit(PKA_CACHE_KEY, [...this.cachedPages])
   },
@@ -46,13 +45,16 @@ const KeepAlive: KeepAliveObject = {
     if (!page) return
     if (this.cachedPages.indexOf(page) === -1) return
     this.cachedPages = this.cachedPages.filter(p => p !== page)
+    if (this.debug) console.log(`[KeepAlive] 移除缓存 ${page}`)
     // 复制一份再传送
     emitter.emit(PKA_CACHE_KEY, [...this.cachedPages])
   },
 
-  install(Vue: VueConstructor) {
+  install(Vue: VueConstructor, options: KeepAliveOptions) {
     const destroyListener = eventListener()
     emitter.on(PKA_DESTROYED_COMP_KEY, destroyListener)
+
+    if (options.debug) KeepAlive.debug = true
 
     Vue.mixin({
       created() {
@@ -60,11 +62,13 @@ const KeepAlive: KeepAliveObject = {
         KeepAlive.isRegisterScrollBehavior = true
       },
       beforeRouteLeave(to, from, next) {
-        const isKeep = from.meta?.keepAlive
+        const isKeep = !!from.meta?.keepAlive
+        if (KeepAlive.debug) console.log(`[KeepAlive] 路由即将跳转，从 ${from.name} -> ${to.name}，当前是否开启KeepAlive：${isKeep}`)
         if (isKeep) {
           // @ts-ignore
           const name = (this as Vue).$vnode?.componentOptions?.Ctor?.options?.name
-
+          if (KeepAlive.debug) console.log(`[KeepAlive] 路由即将跳转，需要缓存页面页面名：${name}`)
+          if (!name) console.warn(`[KeepAlive] ${from.name} 开启了 KeepAlive，但是缺少 name 无法缓存。检查 vue 文件中是否忘记配置了 name。`)
           if (cache.isBack) {
             // 此时为后退
             // 要考虑删除缓存 from（当前页）

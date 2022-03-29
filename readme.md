@@ -7,9 +7,12 @@ Vue 页面级 keep-alive 控制。 路由后退时走缓存，前进时不走缓
 `main.js` 中注册插件：
 
 ```js
-import { PageKeepAlive } from '@/plugins/PageKeepAlive'
+import { PageKeepAlive } from 'vue-page-keep-alive'
 
 Vue.use(PageKeepAlive)
+
+// 如果需要调试，可以传入参数。此时会打印 `console.log` 日志。
+Vue.use(PageKeepAlive, { debug: true })
 ```
 
 `App.vue` 中进行组件嵌套：
@@ -24,7 +27,7 @@ Vue.use(PageKeepAlive)
     </div>
 </template>
 <script>
-    import { PageKeepAliveComponent } from '@/plugins/PageKeepAlive'
+    import { PageKeepAliveComponent } from 'vue-page-keep-alive'
 
     export default {
         components: { PageKeepAliveComponent },
@@ -44,6 +47,19 @@ const routes = [
   }
 ]
 ```
+
+如果路由中没有配置 `scrollBehavior`，则默认会配置为：
+
+```js
+
+const router = new Router({
+  scrollBehavior: function (to, from, savedPosition) {
+    return savedPosition || { x: 0, y: 0 }
+  }
+})
+```
+
+如果路由中存在 `scrollBehavior`，则以原有为准。
 
 ## 注意
 
